@@ -14,6 +14,7 @@ describe('Asset Transfer Basic Tests', () => {
             getState: jest.fn(),
             deleteState: jest.fn(),
             getStateByRange: jest.fn(),
+            createCompositeKey: jest.fn()
         }))();
 
         ctx.setChaincodeStub(stub);
@@ -41,6 +42,10 @@ describe('Asset Transfer Basic Tests', () => {
             return Promise.resolve(key);
         });
 
+        stub.createCompositeKey.mockImplementation((objectType, attributes) => {
+            return `${objectType}${attributes.join('')}`;
+        });
+
         asset = {
             id: 'asset1',
             Color: 'blue',
@@ -56,14 +61,14 @@ describe('Asset Transfer Basic Tests', () => {
 
             let info = new Info();
 
-            await expect(info.CreateAsset(ctx, asset)).rejects.toThrow('failed inserting key');
+            await expect(info.CreateAsset(ctx, 'assetType', asset.id, JSON.stringify(asset))).rejects.toThrow('failed inserting key');
         });
 
         it('should return success on CreateAsset', async () => {
             let info = new Info();
-            await info.CreateAsset(ctx, asset);
+            await info.CreateAsset(ctx, 'assetType', asset.id, JSON.stringify(asset));
 
-            let ret = JSON.parse((await stub.getState(asset.id)).toString());
+            let ret = JSON.parse((await stub.getState(stub.createCompositeKey('assetType', [asset.id]))).toString());
             expect(ret).toEqual(asset);
         });
     });
@@ -71,16 +76,16 @@ describe('Asset Transfer Basic Tests', () => {
     describe('Test ReadAsset', () => {
         it('should return error on ReadAsset', async () => {
             let info = new Info();
-            await info.CreateAsset(ctx, asset);
+            await info.CreateAsset(ctx, 'assetType', asset.id, JSON.stringify(asset));
 
-            await expect(info.ReadAsset(ctx, 'asset2')).rejects.toThrow('The asset asset2 does not exist');
+            await expect(info.ReadAsset(ctx, 'assetType', 'asset2')).rejects.toThrow('The asset assetType with id asset2 does not exist');
         });
 
         it('should return success on ReadAsset', async () => {
             let info = new Info();
-            await info.CreateAsset(ctx, asset);
+            await info.CreateAsset(ctx, 'assetType', asset.id, JSON.stringify(asset));
 
-            let ret = JSON.parse(await stub.getState(asset.id));
+            let ret = JSON.parse((await info.ReadAsset(ctx, 'assetType', asset.id)).toString());
             expect(ret).toEqual(asset);
         });
     });
@@ -88,48 +93,51 @@ describe('Asset Transfer Basic Tests', () => {
     describe('Test UpdateAsset', () => {
         it('should return error on UpdateAsset', async () => {
             let info = new Info();
-            await info.CreateAsset(ctx, asset);
+            await info.CreateAsset(ctx, 'assetType', asset.id, JSON.stringify(asset));
 
-            await expect(info.UpdateAsset(ctx, {
+            const updateData = {
                 id: 'asset2',
                 Color: 'orange',
                 Size: 10,
                 Owner: 'Me',
                 AppraisedValue: 500
-            })).rejects.toThrow('The asset asset2 does not exist');
+            };
+
+            await expect(info.UpdateAsset(ctx, 'assetType', 'asset2', JSON.stringify(updateData))).rejects.toThrow('The asset assetType with id asset2 does not exist');
         });
 
         it('should return success on UpdateAsset', async () => {
             let info = new Info();
-            await info.CreateAsset(ctx, asset);
+            await info.CreateAsset(ctx, 'assetType', asset.id, JSON.stringify(asset));
 
-            const newAsset = {
+            const updateData = {
                 id: 'asset1',
                 Color: 'orange',
                 Size: 10,
                 Owner: 'Me',
                 AppraisedValue: 500
             };
-            await info.UpdateAsset(ctx, newAsset);
-            let ret = JSON.parse(await stub.getState(asset.id));
-            expect(ret).toEqual(newAsset);
+
+            await info.UpdateAsset(ctx, 'assetType', asset.id, JSON.stringify(updateData));
+            let ret = JSON.parse(await stub.getState(stub.createCompositeKey('assetType', [asset.id])));
+            expect(ret).toEqual({ ...asset, ...updateData });
         });
     });
 
     describe('Test DeleteAsset', () => {
         it('should return error on DeleteAsset', async () => {
             let info = new Info();
-            await info.CreateAsset(ctx, asset);
+            await info.CreateAsset(ctx, 'assetType', asset.id, JSON.stringify(asset));
 
-            await expect(info.DeleteAsset(ctx, 'asset2')).rejects.toThrow('The asset asset2 does not exist');
+            await expect(info.DeleteAsset(ctx, 'assetType', 'asset2')).rejects.toThrow('The asset assetType with id asset2 does not exist');
         });
 
         it('should return success on DeleteAsset', async () => {
             let info = new Info();
-            await info.CreateAsset(ctx, asset);
+            await info.CreateAsset(ctx, 'assetType', asset.id, JSON.stringify(asset));
 
-            await info.DeleteAsset(ctx, asset.id);
-            let ret = await stub.getState(asset.id);
+            await info.DeleteAsset(ctx, 'assetType', asset.id);
+            let ret = await stub.getState(stub.createCompositeKey('assetType', [asset.id]));
             expect(ret).toBeUndefined();
         });
     });

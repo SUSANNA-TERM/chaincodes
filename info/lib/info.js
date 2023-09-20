@@ -6,56 +6,69 @@ const { Contract } = require('fabric-contract-api');
 
 class Info extends Contract {
 
-    // CreateAsset issues a new asset to the world state with given details.
-    async CreateAsset(ctx, asset) {
-        const id = asset.id;
+    _createCompositeKey(stub, asset, ...params) {
+        return stub.createCompositeKey(asset, params)
+    }
 
-        if (await this.AssetExists(ctx, id)) {
-            throw new Error(`The asset ${id} already exists`);
+    _getData(stub, asset, ...params) {
+        const key = this._createCompositeKey(stub, asset, ...params)
+        return stub.getState(key);
+    }
+
+    // CreateAsset issues a new asset to the world state with given details.
+    async CreateAsset(ctx, asset, id, data) {
+        if (await this.AssetExists(ctx, asset, id)) {
+            throw new Error(`The asset ${asset} with id ${id} already exists`);
         }
 
+        const key = this._createCompositeKey(ctx.stub, asset, id);
         // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
-        await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
-        return JSON.stringify(asset);
+        await ctx.stub.putState(key, Buffer.from(stringify(sortKeysRecursive(JSON.parse(data)))));
+        return data;
     }
 
     // ReadAsset returns the asset stored in the world state with given id.
-    async ReadAsset(ctx, id) {
-        const assetJSON = await ctx.stub.getState(id); 
+    async ReadAsset(ctx, asset, id) {
+        const assetJSON = await this._getData(ctx.stub, asset, id); 
 
         if (!assetJSON || assetJSON.length === 0) {
-            throw new Error(`The asset ${id} does not exist`);
+            throw new Error(`The asset ${asset} with id ${id} does not exist`);
         }
 
         return assetJSON.toString();
     }
 
     // UpdateAsset updates an existing asset in the world state with provided parameters.
-    async UpdateAsset(ctx, asset) {
-        const id = asset.id;
-        const oldAsset = JSON.parse(await this.ReadAsset(ctx, id));
+    async UpdateAsset(ctx, asset, id, data) {
+        data = JSON.parse(data);
+        const oldAsset = JSON.parse(await this.ReadAsset(ctx, asset, id));
 
         // overwriting original asset with new asset
         const newAsset = {
             ...oldAsset,
-            ...asset
+            ...data
         };
 
-        return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(newAsset))));
+        const key = this._createCompositeKey(ctx.stub, asset, id);
+        await ctx.stub.putState(key, Buffer.from(stringify(sortKeysRecursive(newAsset))));
+        return JSON.stringify(newAsset);
     }
 
     // DeleteAsset deletes an given asset from the world state.
-    async DeleteAsset(ctx, id) {
-        const exists = await this.AssetExists(ctx, id);
+    async DeleteAsset(ctx, asset, id) {
+        const exists = await this.AssetExists(ctx, asset, id);
         if (!exists) {
-            throw new Error(`The asset ${id} does not exist`);
+            throw new Error(`The asset ${asset} with id ${id} does not exist`);
         }
-        return ctx.stub.deleteState(id);
+
+        const key = this._createCompositeKey(ctx.stub, asset, id);
+        await ctx.stub.deleteState(key);
     }
 
     // AssetExists returns true when asset with given id exists in world state.
-    async AssetExists(ctx, id) {
-        const assetJSON = await ctx.stub.getState(id);
+    async AssetExists(ctx, asset, id) {
+        const key = this._createCompositeKey(ctx.stub, asset, id);
+        const assetJSON = await ctx.stub.getState(key);
         return assetJSON && assetJSON.length > 0;
     }
 }
