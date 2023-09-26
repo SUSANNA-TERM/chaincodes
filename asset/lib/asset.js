@@ -4,7 +4,7 @@ const stringify = require('json-stringify-deterministic');
 const sortKeysRecursive = require('sort-keys-recursive');
 const { Contract } = require('fabric-contract-api');
 
-class Info extends Contract {
+class Asset extends Contract {
 
     _createCompositeKey(stub, asset, ...params) {
         return stub.createCompositeKey(asset, params)
@@ -87,4 +87,4 @@ class Info extends Contract {
     }
 }
 
-module.exports = Info;
+module.exports = Asset;

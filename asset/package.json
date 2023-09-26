@@ -1,7 +1,7 @@
 {
-  "name": "info",
+  "name": "asset",
   "version": "1.0.0",
-  "description": "Info contract implemented in javascript",
+  "description": "Asset contract implemented in javascript",
   "main": "index.js",
   "scripts": {
     "test": "jest"
