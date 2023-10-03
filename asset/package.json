@@ -4,7 +4,8 @@
   "description": "Asset contract implemented in javascript",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "fabric-chaincode-node start"
   },
   "author": "",
   "license": "ISC",
