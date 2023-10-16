@@ -19,7 +19,7 @@ class Asset extends Contract {
 
     async _getDataByPartialCompositeKey(stub, asset, collection, ...params) {
         const results = collection
-            ? await stub.getPrivateDataByPartialCompositeKey(collection, asset, params)
+            ? (await stub.getPrivateDataByPartialCompositeKey(collection, asset, params)).iterator
             : await stub.getStateByPartialCompositeKey(asset, params);
         return this._parseIterator(results);
     }
@@ -39,7 +39,9 @@ class Asset extends Contract {
             allResults.push(record);
             result = await iterator.next();
         }
-        return stringify(sortKeysRecursive(JSON.parse(allResults)))
+        iterator.close()
+
+        return stringify(sortKeysRecursive(allResults))
     }
 
     // CreateAsset issues a new asset to the world state with given details.
