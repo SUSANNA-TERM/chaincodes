@@ -1,0 +1,21 @@
+{
+  "name": "readings",
+  "version": "1.0.0",
+  "description": "Readings contract implemented in javascript",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "start": "fabric-chaincode-node start"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fabric-contract-api": "^2.5.4",
+    "fabric-shim": "^2.5.4",
+    "json-stringify-deterministic": "^1.0.10",
+    "sort-keys-recursive": "^2.1.8"
+  },
+  "devDependencies": {
+    "jest": "^29.6.2"
+  }
+}
