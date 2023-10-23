@@ -1,11 +1,13 @@
 'use strict';
 
+const stringify = require('json-stringify-deterministic');
+const sortKeysRecursive = require('sort-keys-recursive');
 const Asset = require('./asset');
 
 class ReadingsBridge extends Asset {
 
 
-    async processMeterStatus(ctx, meterStatusString) {
+    async ProcessMeterStatus(ctx, meterStatusString) {
         // Parse the input string to an object
         const meterStatus = JSON.parse(meterStatusString);
 
@@ -15,11 +17,11 @@ class ReadingsBridge extends Asset {
         // Prepare data for metertometerstatus table
         const sensorDate = new Date(meterStatus.sensor_date);
         const id = sensorDate.getTime().toString();
-        const meterToMeterStatus = stringify(sortKeysRecursive(JSON.parse({
+        const meterToMeterStatus = stringify(sortKeysRecursive({
             id,
             meter_id: meterStatus.meter_id,
             meterstatus_id: meterStatus.meterstatus_id
-        })));
+        }));
 
         // Write to metertometerstatus table using CreateAsset function
         await this.CreateAsset(ctx, 'metertometerstatus', id, JSON.stringify(meterToMeterStatus));
