@@ -37,6 +37,14 @@ class ReadingsBridge extends Asset {
 
         return processedMeterStatus;
     }
+
+    async Query(ctx, queryString, collection) {
+        const iterator = collection
+            ? (await ctx.stub.getPrivateDataQueryResult(collection, queryString)).iterator
+            : await ctx.stub.getQueryResult(queryString);
+
+        return this._parseIterator(iterator);
+    }
 }
 
 module.exports = ReadingsBridge;
