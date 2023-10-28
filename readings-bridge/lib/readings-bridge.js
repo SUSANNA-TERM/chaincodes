@@ -24,7 +24,7 @@ class ReadingsBridge extends Asset {
         }));
 
         // Write to metertometerstatus table using CreateAsset function
-        await this.CreateAsset(ctx, 'metertometerstatus', meterToMeterStatus.meterstatus_id, JSON.stringify(meterToMeterStatus), collection);
+        await this.CreateAsset(ctx, 'metertometerstatus', String(meterStatus.meterstatus_id), meterToMeterStatus, collection);
 
         // TODO: Retrieve location_id from Meters table using meter_id and invokeChaincode
         const processedMeterStatus = {
