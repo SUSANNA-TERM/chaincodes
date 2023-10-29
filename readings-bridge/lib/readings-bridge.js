@@ -6,6 +6,15 @@ const Asset = require('./asset');
 
 class ReadingsBridge extends Asset {
 
+    async MeterStatusesToMeters(ctx, meterStatuses, collection) {
+        const records = [];
+        for (const meterStatus of meterStatuses) {
+            const record = await this.ReadAsset(ctx, 'metertometerstatus', String(meterStatus.meterstatus_id), collection);
+            records.push(JSON.parse(record));
+        }
+
+        return Array.from(new Set(records.map(record => record.meter_id)));
+    }
 
     async ProcessMeterStatus(ctx, meterStatus, collection) {
         // Parse the input string to an object
