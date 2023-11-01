@@ -4,6 +4,22 @@
 const { Context } = require('fabric-contract-api');
 const Asset = require('../lib/asset.js');
 
+const mockIterator = (data) => {
+    const items = Object.entries(data).map(([key, value]) => ({
+        key,
+        value: value
+    }));
+
+    return {
+        next: jest.fn().mockImplementation(async () => {
+            const item = items.shift();
+            if (item) return { value: item, done: false };
+            return { value: null, done: true };
+        }),
+        close: jest.fn(),
+    };
+};
+
 describe('Asset Transfer Basic Tests', () => {
     const collection = "privateCollection";
     let ctx, stub, asset;
@@ -19,7 +35,9 @@ describe('Asset Transfer Basic Tests', () => {
             createCompositeKey: jest.fn(),
             putPrivateData: jest.fn(),
             getPrivateData: jest.fn(),
-            deletePrivateData: jest.fn()
+            deletePrivateData: jest.fn(),
+            getStateByRange: jest.fn(),
+            getPrivateDataByRange: jest.fn()
         }))();
 
         ctx.setChaincodeStub(stub);
@@ -75,6 +93,9 @@ describe('Asset Transfer Basic Tests', () => {
             }
             return Promise.resolve(key);
         });
+
+        stub.getStateByRange.mockImplementation(async (start, end) => mockIterator(stub.states));
+        stub.getPrivateDataByRange.mockImplementation(async (coll, start, end) => mockIterator(stub.privateStates[collection]));
 
         asset = {
             id: 'asset1',
@@ -248,6 +269,38 @@ describe('Asset Transfer Basic Tests', () => {
             await asset.DeleteAsset(ctx, 'assetType', asset.id, collection);
             let ret = await stub.getPrivateData(collection, stub.createCompositeKey('assetType', [asset.id]));
             expect(ret).toBeUndefined();
+        });
+
+        describe.only('Test _getDataByRange', () => {
+            let asset;
+
+            beforeEach(async () => {
+                stub.privateStates = {};
+                stub.states = {};
+
+                asset = new Asset();
+                await asset.CreateAsset(ctx, 'assetType', 'asset1', JSON.stringify({ id: 'asset1', name: 'Asset One' }));
+                await asset.CreateAsset(ctx, 'assetType', 'asset2', JSON.stringify({ id: 'asset2', name: 'Asset Two' }));
+
+                await asset.CreateAsset(ctx, 'assetType', 'asset1', JSON.stringify({ id: 'asset1', name: 'Asset One' }), collection);
+                await asset.CreateAsset(ctx, 'assetType', 'asset2', JSON.stringify({ id: 'asset2', name: 'Asset Two' }), collection);
+            });
+
+            it('should retrieve assets from world state by range', async () => {
+                const result = await asset._getDataByRange(ctx.stub, 'asset1', 'asset3');
+                const assets = JSON.parse(result);
+                expect(assets.length).toBe(2);
+                expect(assets[0].id).toBe('asset1');
+                expect(assets[1].id).toBe('asset2');
+            });
+
+            it('should retrieve assets from private data collection by range', async () => {
+                const result = await asset._getDataByRange(ctx.stub, 'asset1', 'asset3', 'collectionName');
+                const assets = JSON.parse(result);
+                expect(assets.length).toBe(2);
+                expect(assets[0].id).toBe('asset1');
+                expect(assets[1].id).toBe('asset2');
+            });
         });
     });
 });
