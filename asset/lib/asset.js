@@ -113,6 +113,15 @@ class Asset extends Contract {
         return assetJSON && assetJSON.length > 0;
     }
 
+    // Query executes a query against the database and returns the assets that satisfy the specified conditions
+    async Query(ctx, queryString, collection) {
+        const iterator = collection
+            ? (await ctx.stub.getPrivateDataQueryResult(collection, queryString)).iterator
+            : await ctx.stub.getQueryResult(queryString);
+
+        return this._parseIterator(iterator);
+    }
+
     // GetAllAssets returns all records of a specified asset
     GetAllAssets(ctx, asset, collection) {
         return this._getDataByPartialCompositeKey(ctx.stub, asset, collection);
