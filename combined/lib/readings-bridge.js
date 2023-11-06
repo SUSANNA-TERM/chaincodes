@@ -34,8 +34,10 @@ class ReadingsBridge extends Asset {
             total_consumption: meterStatus.value
         }));
 
-        // Write to metertometerstatus table using CreateAsset function
-        await this.CreateAsset(ctx, 'metertometerstatus', String(meterStatus.meterstatus_id), meterToMeterStatus, collection);
+        // Write to metertometerstatus table using CreateAsset function, only if the reading doesn't exist
+        if (!await this.AssetExists(ctx, 'metertometerstatus', String(meterStatus.meterstatus_id), collection)) {
+            await this.CreateAsset(ctx, 'metertometerstatus', String(meterStatus.meterstatus_id), meterToMeterStatus, collection);
+        }
 
         // TODO: Retrieve location_id from Meters table using meter_id and invokeChaincode
         const processedMeterStatus = {
