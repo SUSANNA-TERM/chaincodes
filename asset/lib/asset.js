@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash')
 const stringify = require('json-stringify-deterministic');
 const sortKeysRecursive = require('sort-keys-recursive');
 const { Contract } = require('fabric-contract-api');
@@ -120,6 +121,26 @@ class Asset extends Contract {
             : await ctx.stub.getQueryResult(queryString);
 
         return this._parseIterator(iterator);
+    }
+
+    async validateAsset(ctx, asset, id, target, collection) {
+        target = JSON.parse(target);
+
+        const validationResult = {
+            exists: false,
+            same: false
+        };
+
+        try {
+            const source = JSON.parse(await this.ReadAsset(ctx, asset, id, collection));
+            validationResult.exists = true;
+            validationResult.same = _.isEqual(source, target);
+        } catch (error) {
+            // If ReadAsset throws an error, the asset does not exist.
+            // Exists and same should remain false, so pass
+        }
+
+        return validationResult;
     }
 
     // GetAllAssets returns all records of a specified asset
