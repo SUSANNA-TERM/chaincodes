@@ -123,7 +123,7 @@ class Asset extends Contract {
         return this._parseIterator(iterator);
     }
 
-    async validateAsset(ctx, asset, id, target, collection) {
+    async ValidateAsset(ctx, asset, id, target, collection) {
         target = JSON.parse(target);
 
         const validationResult = {
