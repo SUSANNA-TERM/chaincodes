@@ -127,6 +127,8 @@ class Asset extends Contract {
         target = JSON.parse(target);
 
         const validationResult = {
+            target,
+            source: null,
             exists: false,
             same: false
         };
@@ -134,6 +136,7 @@ class Asset extends Contract {
         try {
             const source = JSON.parse(await this.ReadAsset(ctx, asset, id, collection));
             validationResult.exists = true;
+            validationResult.source = source;
             validationResult.same = _.isEqual(source, target);
         } catch (error) {
             // If ReadAsset throws an error, the asset does not exist.
